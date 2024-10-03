@@ -168,8 +168,26 @@ const App: React.FC = () => {
     return false;
   }
 
+  function showShadow(){
+    const shape = TETROMINOES[currentTetromino];
+    const newBoard = board.map((row) => row.slice());
+
+    for (let y = 0; y < shape.length; y++) {
+      for (let x = 0; x < shape[y].length; x++) {
+        if (shape[y][x]) {
+          const newY = y + position.y;
+          const newX = x + position.x;
+          if (newY >= 0) {
+            newBoard[newY][newX] = shape[y][x];
+          }
+        }
+      }
+    }
+
+
+  }
+
   function mergeTetromino() {
-    console.log("merging")
     const shape = TETROMINOES[currentTetromino];
     const newBoard = board.map((row) => row.slice());
 
@@ -188,34 +206,26 @@ const App: React.FC = () => {
     setBoard(newBoard);
 
     for (let y = ROWS - 1; y > 0; y--) {
-      // Check if the row is completely filled (i.e., every cell is 1)
       if (newBoard[y].every((cell) => cell === 1)) {
-        // Clear the filled row
         for (let x = 0; x < COLS; x++) {
           newBoard[y][x] = 0;
         }
 
-        // Shift rows above down by one
         for (let yAxis = y; yAxis > 0; yAxis--) {
           for (let xAxis = 0; xAxis < COLS; xAxis++) {
             newBoard[yAxis][xAxis] = newBoard[yAxis - 1][xAxis];
           }
         }
 
-        // After shifting, reset the top row
         for (let xAxis = 0; xAxis < COLS; xAxis++) {
           newBoard[0][xAxis] = 0;
         }
 
-        // Update the state
         setBoard(newBoard);
-
-        // Since rows have shifted, adjust `y` to recheck the current row index
         y++;
       }
     }
-
-  } 
+  }
 
   function spawnNewTetromino() {
     setCurrentTetromino(nextTetromino);
