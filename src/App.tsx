@@ -187,40 +187,35 @@ const App: React.FC = () => {
 
     setBoard(newBoard);
 
-    for (let y = 0; y < ROWS; y++) {
-      let frag = 1;
+    for (let y = ROWS - 1; y > 0; y--) {
+      // Check if the row is completely filled (i.e., every cell is 1)
       if (newBoard[y].every((cell) => cell === 1)) {
-        console.log(y + " full")
-        newBoard[y].every((cell) => cell = 0);
-        
-        console.log(newBoard[y].every((cell) => cell))
-        setBoard(newBoard)
-      }
-
-      if (frag == 1) {
-        for (let i = 0; i < COLS; i++) {
-          console.log("deleting rows")
-          // newBoard[y][i] = 0;
+        // Clear the filled row
+        for (let x = 0; x < COLS; x++) {
+          newBoard[y][x] = 0;
         }
+
+        // Shift rows above down by one
+        for (let yAxis = y; yAxis > 0; yAxis--) {
+          for (let xAxis = 0; xAxis < COLS; xAxis++) {
+            newBoard[yAxis][xAxis] = newBoard[yAxis - 1][xAxis];
+          }
+        }
+
+        // After shifting, reset the top row
+        for (let xAxis = 0; xAxis < COLS; xAxis++) {
+          newBoard[0][xAxis] = 0;
+        }
+
+        // Update the state
+        setBoard(newBoard);
+
+        // Since rows have shifted, adjust `y` to recheck the current row index
+        y++;
       }
-      // setBoard(newBoard);
-
     }
 
-    clearFullRows();
-  }
-
-  function clearFullRows() {
-    let newBoard = [...board];
-    let rowsCleared = 0;
-
-    
-
-    if (rowsCleared > 0) {
-      // setScore((prevScore) => prevScore + rowsCleared * 100);
-    }
-
-  }
+  } 
 
   function spawnNewTetromino() {
     setCurrentTetromino(nextTetromino);
