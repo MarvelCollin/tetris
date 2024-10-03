@@ -40,6 +40,8 @@ interface Position {
     y: number;
 }
 
+const COLORS = ["red", "green", "blue", "yellow", "cyan", "purple", "orange"];
+
 function createEmptyBoard(): number[][] {
     const board: number[][] = [];
     for (let i = 0; i < ROWS; i++) {
@@ -53,6 +55,10 @@ function randomTetromino(): Tetromino {
     return tetrominoes[Math.floor(Math.random() * tetrominoes.length)];
 }
 
+function randomColor(): string {
+    return COLORS[Math.floor(Math.random() * COLORS.length)];
+}
+
 const Tetris: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nextCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,6 +68,8 @@ const Tetris: React.FC = () => {
     const [position, setPosition] = useState<Position>({ x: Math.floor(COLS / 2) - 2, y: 0 });
     const [gameOver, setGameOver] = useState<boolean>(false);
     const [score, setScore] = useState<number>(0);
+    const [color, setColor] = useState<string>(randomColor());
+    const [nextColor, setNextColor] = useState<string>(randomColor());
 
     useEffect(() => {
         function handleKeyPress(e: KeyboardEvent) {
@@ -103,7 +111,7 @@ const Tetris: React.FC = () => {
     useEffect(() => {
         drawBoard();
         drawNextTetromino();
-    }, [board, currentTetromino, position, nextTetromino]);
+    }, [board, currentTetromino, position, nextTetromino, color]);
 
     function drawBoard() {
         const canvas = canvasRef.current;
@@ -118,15 +126,19 @@ const Tetris: React.FC = () => {
             row.forEach((cell, x) => {
                 if (cell) {
                     drawBlock(ctx, x, y, "blue");
+                } else {
+                    drawBlock(ctx, x, y, "white"); // Draw empty cells with a border
                 }
             });
         });
+
+        drawShadowTetromino(ctx);
 
         const shape = TETROMINOES[currentTetromino];
         shape.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if (cell) {
-                    drawBlock(ctx, position.x + x, position.y + y, "blue");
+                    drawBlock(ctx, position.x + x, position.y + y, color);
                 }
             });
         });
@@ -145,17 +157,39 @@ const Tetris: React.FC = () => {
         shape.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if (cell) {
-                    drawBlock(ctx, x, y, "blue", BLOCK_SIZE / 2);
+                    drawBlock(ctx, x, y, nextColor, BLOCK_SIZE / 2);
+                } else {
+                    drawBlock(ctx, x, y, "white", BLOCK_SIZE / 2); // Draw empty cells with a border
                 }
             });
         });
     }
 
     function drawBlock(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, size: number = BLOCK_SIZE) {
+        // Draw the main block
         ctx.fillStyle = color;
         ctx.fillRect(x * size, y * size, size, size);
-        ctx.strokeStyle = "black";
+
+        // Draw the border of the block
+        ctx.strokeStyle = "black"; // Set the border color (change it if needed)
+        ctx.lineWidth = 1; // Set the thickness of the border
         ctx.strokeRect(x * size, y * size, size, size);
+    }
+
+    function drawShadowTetromino(ctx: CanvasRenderingContext2D) {
+        let newY = position.y;
+        while (!isColliding({ x: position.x, y: newY + 1 })) {
+            newY++;
+        }
+
+        const shape = TETROMINOES[currentTetromino];
+        shape.forEach((row, y) => {
+            row.forEach((cell, x) => {
+                if (cell) {
+                    drawBlock(ctx, position.x + x, newY + y, "rgba(0, 0, 0, 0.2)"); // Draw shadow block with semi-transparent color
+                }
+            });
+        });
     }
 
     function moveTetromino(direction: number) {
@@ -202,8 +236,10 @@ const Tetris: React.FC = () => {
     function swapTetromino() {
         setCurrentTetromino((prevTetromino) => {
             setNextTetromino(prevTetromino);
+            setNextColor(color);
             return nextTetromino;
         });
+        setColor(nextColor);
         setPosition({ x: Math.floor(COLS / 2) - 2, y: 0 });
     }
 
@@ -260,6 +296,8 @@ const Tetris: React.FC = () => {
         setCurrentTetromino(nextTetromino);
         setNextTetromino(randomTetromino());
         setPosition({ x: Math.floor(COLS / 2) - 2, y: 0 });
+        setColor(nextColor);
+        setNextColor(randomColor());
 
         const randomRotations = Math.floor(Math.random() * 4);
         for (let i = 0; i < randomRotations; i++) {
@@ -277,22 +315,26 @@ const Tetris: React.FC = () => {
                 <h2>Game Over</h2>
             ) : (
                 <>
-                    <canvas
-                        ref={canvasRef}
-                        width={COLS * BLOCK_SIZE}
-                        height={ROWS * BLOCK_SIZE}
-                        className="canvas"
-                    ></canvas>
-                    <div className="next-tetromino">
-                        <h3>Next Tetromino:</h3>
+                    <div style={{ border: "5px solid black", display: "inline-block" }}>
                         <canvas
-                            ref={nextCanvasRef}
-                            width={4 * (BLOCK_SIZE / 2)}
-                            height={4 * (BLOCK_SIZE / 2)}
-                            className="next-canvas"
+                            ref={canvasRef}
+                            width={COLS * BLOCK_SIZE}
+                            height={ROWS * BLOCK_SIZE}
+                            className="canvas"
                         ></canvas>
                     </div>
-                    <div className="score">
+                    <div className="next-tetromino" style={{ marginTop: "20px" }}>
+                        <h3>Next Tetromino:</h3>
+                        <div style={{ border: "5px solid black", display: "inline-block" }}>
+                            <canvas
+                                ref={nextCanvasRef}
+                                width={4 * (BLOCK_SIZE / 2)}
+                                height={4 * (BLOCK_SIZE / 2)}
+                                className="next-canvas"
+                            ></canvas>
+                        </div>
+                    </div>
+                    <div className="score" style={{ marginTop: "20px" }}>
                         <h3>Score: {score}</h3>
                     </div>
                 </>
