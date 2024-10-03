@@ -40,12 +40,17 @@ interface Position {
     y: number;
 }
 
+interface Block {
+    value: number;
+    color: string;
+}
+
 const COLORS = ["red", "green", "blue", "yellow", "cyan", "purple", "orange"];
 
-function createEmptyBoard(): number[][] {
-    const board: number[][] = [];
+function createEmptyBoard(): Block[][] {
+    const board: Block[][] = [];
     for (let i = 0; i < ROWS; i++) {
-        board.push(new Array(COLS).fill(0));
+        board.push(new Array(COLS).fill({ value: 0, color: "" }));
     }
     return board;
 }
@@ -62,7 +67,7 @@ function randomColor(): string {
 const Tetris: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const nextCanvasRef = useRef<HTMLCanvasElement>(null);
-    const [board, setBoard] = useState<number[][]>(createEmptyBoard());
+    const [board, setBoard] = useState<Block[][]>(createEmptyBoard());
     const [currentTetromino, setCurrentTetromino] = useState<Tetromino>("I");
     const [nextTetromino, setNextTetromino] = useState<Tetromino>(randomTetromino());
     const [position, setPosition] = useState<Position>({ x: Math.floor(COLS / 2) - 2, y: 0 });
@@ -123,11 +128,11 @@ const Tetris: React.FC = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         board.forEach((row, y) => {
-            row.forEach((cell, x) => {
-                if (cell) {
-                    drawBlock(ctx, x, y, "blue");
+            row.forEach((block, x) => {
+                if (block.value) {
+                    drawBlock(ctx, x, y, block.color);
                 } else {
-                    drawBlock(ctx, x, y, "white"); // Draw empty cells with a border
+                    drawBlock(ctx, x, y, "white"); 
                 }
             });
         });
@@ -159,20 +164,18 @@ const Tetris: React.FC = () => {
                 if (cell) {
                     drawBlock(ctx, x, y, nextColor, BLOCK_SIZE / 2);
                 } else {
-                    drawBlock(ctx, x, y, "white", BLOCK_SIZE / 2); // Draw empty cells with a border
+                    drawBlock(ctx, x, y, "white", BLOCK_SIZE / 2); 
                 }
             });
         });
     }
 
     function drawBlock(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, size: number = BLOCK_SIZE) {
-        // Draw the main block
         ctx.fillStyle = color;
         ctx.fillRect(x * size, y * size, size, size);
 
-        // Draw the border of the block
-        ctx.strokeStyle = "black"; // Set the border color (change it if needed)
-        ctx.lineWidth = 1; // Set the thickness of the border
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1; 
         ctx.strokeRect(x * size, y * size, size, size);
     }
 
@@ -186,7 +189,7 @@ const Tetris: React.FC = () => {
         shape.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if (cell) {
-                    drawBlock(ctx, position.x + x, newY + y, "rgba(0, 0, 0, 0.2)"); // Draw shadow block with semi-transparent color
+                    drawBlock(ctx, position.x + x, newY + y, "rgba(0, 0, 0, 0.2)"); 
                 }
             });
         });
@@ -254,7 +257,7 @@ const Tetris: React.FC = () => {
                         newY >= ROWS ||
                         newX < 0 ||
                         newX >= COLS ||
-                        (newY >= 0 && board[newY][newX])
+                        (newY >= 0 && board[newY][newX].value)
                     ) {
                         return true;
                     }
@@ -274,7 +277,7 @@ const Tetris: React.FC = () => {
                     const newY = y + position.y;
                     const newX = x + position.x;
                     if (newY >= 0) {
-                        newBoard[newY][newX] = shape[y][x];
+                        newBoard[newY][newX] = { value: 1, color: color };
                     }
                 }
             }
@@ -283,9 +286,9 @@ const Tetris: React.FC = () => {
         setBoard(newBoard);
 
         for (let y = ROWS - 1; y > 0; y--) {
-            if (newBoard[y].every((cell) => cell === 1)) {
+            if (newBoard[y].every((cell) => cell.value === 1)) {
                 newBoard.splice(y, 1);
-                newBoard.unshift(new Array(COLS).fill(0));
+                newBoard.unshift(new Array(COLS).fill({ value: 0, color: "" }));
                 setScore((prevScore) => prevScore + 100);
                 y++;
             }
